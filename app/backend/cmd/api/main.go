@@ -1,15 +1,36 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	_ = godotenv.Load(".env")
+	dbURL := os.Getenv("DB_URL")
+
+	// подключаемся
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	pool, err := pgxpool.New(ctx, dbURL)
+	if err != nil {
+		log.Fatal("Не удалось подключиться к БД:", err)
+	}
+	defer pool.Close()
+
+	if dbURL == "" {
+		fmt.Println("error")
+	}
+	fmt.Println(dbURL)
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
