@@ -2,62 +2,52 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
+	"defectsapp/internal/config"
+	"defectsapp/internal/db"
+	httpx "defectsapp/internal/http"
 )
 
 func main() {
-	_ = godotenv.Load(".env")
-	dbURL := os.Getenv("DB_URL")
+	// 1) грузим конфиг из .env / env
+	cfg := config.Load()
 
-	// подключаемся
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	pool, err := pgxpool.New(ctx, dbURL)
+	// 2) создаём пул соединений с БД
+	pool, err := db.NewPool(context.Background(), cfg.DBURL)
 	if err != nil {
-		log.Fatal("Не удалось подключиться к БД:", err)
+		log.Fatal("db connection:", err)
 	}
 	defer pool.Close()
 
-	if dbURL == "" {
-		fmt.Println("error")
-	}
-	fmt.Println(dbURL)
-	r := gin.New()
-	r.Use(gin.Logger(), gin.Recovery())
+	// 3) собираем роутер (CORS, маршруты)
+	r := httpx.NewRouter(httpx.Deps{
+		DB:          pool,
+		JWTSecret:   cfg.JWT,
+		CORSOrigins: cfg.CORS,
+	})
 
-	// CORS — на время разработки разрешаем фронту (5173) ходить к API
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+	// 4) http-сервер + graceful shutdown
+	srv := &http.Server{Addr: cfg.Addr, Handler: r}
 
-	// Группа /api
-	api := r.Group("/api")
-	{
-		api.GET("/healthz", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{"ok": true})
-		})
-	}
+	go func() {
+		log.Println("API listening on", cfg.Addr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal("listen:", err)
+		}
+	}()
 
-	addr := env("API_ADDR", ":8080")
-	r.Run(addr)
-}
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	<-stop
 
-func env(k, def string) string {
-	if v := os.Getenv(k); v != "" {
-		return v
-	}
-	return def
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = srv.Shutdown(ctx)
+	log.Println("server stopped")
 }
