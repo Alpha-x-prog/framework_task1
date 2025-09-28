@@ -2,16 +2,16 @@ package main
 
 import (
 	"context"
+	"example/defects/app/backend/internal/config"
+
+	"example/defects/app/backend/internal/db"
+	httpx "example/defects/app/backend/internal/http"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"defectsapp/internal/config"
-	"defectsapp/internal/db"
-	httpx "defectsapp/internal/http"
 )
 
 func main() {
