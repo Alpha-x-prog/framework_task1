@@ -5,10 +5,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"example/defects/app/backend/internal/http/handlers"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-
-	"example/defects/app/backend/internal/http/handlers"
 )
 
 type Deps struct {
