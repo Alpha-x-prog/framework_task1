@@ -1,7 +1,9 @@
 package config
 
 import (
+	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -28,4 +30,24 @@ func get(k, def string) string {
 		return v
 	}
 	return def
+}
+
+func must(k string) string {
+	v := os.Getenv(k)
+	if v == "" {
+		log.Fatalf("env %s is required", k)
+	}
+	return v
+}
+
+func splitCSV(s string) []string {
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
