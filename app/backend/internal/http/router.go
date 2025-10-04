@@ -7,6 +7,8 @@ import (
 
 	"example/defects/app/backend/internal/http/handlers"
 
+	mw "example/defects/app/backend/internal/http/mv"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -32,6 +34,24 @@ func NewRouter(d Deps) *gin.Engine {
 	// публичный healthcheck
 	r.GET("/api/healthz", handlers.Health)
 
-	// здесь позже добавим auth/login и защищённые группы
+	// login
+	authH := &handlers.AuthHandler{DB: d.DB, Secret: d.JWTSecret}
+
+	r.POST("/auth/register", authH.Register)
+	r.POST("/auth/login", authH.Login)
+
+	// protected
+	api := r.Group("/api", mw.AuthRequired(d.JWTSecret))
+	{
+		prj := &handlers.ProjectsHandler{DB: d.DB}
+		api.GET("/projects", prj.List)
+		api.POST("/projects", prj.Create)
+
+		api.GET("/me", func(c *gin.Context) {
+			uid, _ := c.Get("uid")
+			role, _ := c.Get("role")
+			c.JSON(200, gin.H{"uid": uid, "role": role})
+		})
+	}
 	return r
 }
