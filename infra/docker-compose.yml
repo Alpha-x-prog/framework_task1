@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: defects
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../sql/init.sql:/docker-entrypoint-initdb.d/00_init.sql:ro
+      - ../sql/seed.sql:/docker-entrypoint-initdb.d/01_seed.sql:ro
+
+  api:
+    build: ../app/backend
+    env_file: ../.env
+    depends_on: [db]
+    ports: ["8080:8080"]
+
+volumes:
+  pgdata: {}

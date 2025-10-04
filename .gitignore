@@ -4,3 +4,4 @@
 /.vscode
 .env
 app/backend/bin
+infra/pgdata
