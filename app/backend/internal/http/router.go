@@ -51,6 +51,10 @@ func NewRouter(d Deps) *gin.Engine {
 		api.GET("/defects", def.List)
 		api.POST("/defects", def.Create)
 
+		cmt := &handlers.CommentsHandler{DB: d.DB}
+		api.GET("/defects/:id/comments", cmt.List)
+		api.POST("/defects/:id/comments", cmt.Create)
+
 		api.GET("/me", func(c *gin.Context) {
 			uid, _ := c.Get("uid")
 			role, _ := c.Get("role")
