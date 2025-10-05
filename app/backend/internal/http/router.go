@@ -60,6 +60,10 @@ func NewRouter(d Deps) *gin.Engine {
 
 		api.PATCH("/defects/:id/status", def.UpdateStatus)
 
+		refs := &handlers.RefsHandler{DB: d.DB}
+		api.GET("/refs/statuses", refs.Statuses)
+		api.GET("/refs/roles", refs.Roles)
+
 		api.GET("/me", func(c *gin.Context) {
 			uid, _ := c.Get("uid")
 			role, _ := c.Get("role")
