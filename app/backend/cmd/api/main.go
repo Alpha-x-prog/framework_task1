@@ -7,11 +7,17 @@ import (
 
 	"example/defects/app/backend/internal/db"
 	httpx "example/defects/app/backend/internal/http"
+	"example/defects/app/backend/internal/migrate"
 )
 
 func main() {
 	// 1) читаем .env / переменные окружения
 	cfg := config.Load()
+
+	// 1) применяем миграции (up-only)
+	if err := migrate.Up(cfg.DBURL); err != nil {
+		log.Fatal("migrations failed:", err)
+	}
 
 	// 2) подключаемся к Postgres (пул соединений)
 	pool, err := db.NewPool(context.Background(), cfg.DBURL)
