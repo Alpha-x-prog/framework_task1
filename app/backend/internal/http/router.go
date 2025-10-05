@@ -58,6 +58,8 @@ func NewRouter(d Deps) *gin.Engine {
 		att := &handlers.AttachmentsHandler{DB: d.DB}
 		api.POST("/defects/:id/attachments", att.Upload)
 
+		api.PATCH("/defects/:id/status", def.UpdateStatus)
+
 		api.GET("/me", func(c *gin.Context) {
 			uid, _ := c.Get("uid")
 			role, _ := c.Get("role")

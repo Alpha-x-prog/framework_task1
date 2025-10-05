@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"example/defects/app/backend/internal/core"
 	"example/defects/app/backend/internal/repo"
 
 	"github.com/gin-gonic/gin"
@@ -109,4 +110,39 @@ func (h *DefectsHandler) Create(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"id": id})
+}
+
+func (h *DefectsHandler) UpdateStatus(c *gin.Context) {
+	// путь: /api/defects/:id/status
+	defectID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "bad id"})
+		return
+	}
+
+	var req struct {
+		StatusID int `json:"status_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	// получить текущий дефект
+	cur, err := repo.GetDefectByID(c, h.DB, defectID)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "not found"})
+		return
+	}
+
+	if !core.CanTransit(cur.StatusID, req.StatusID) {
+		c.JSON(400, gin.H{"error": "invalid transition"})
+		return
+	}
+
+	if err := repo.UpdateDefectStatus(c, h.DB, defectID, req.StatusID); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
