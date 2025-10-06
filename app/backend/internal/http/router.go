@@ -45,7 +45,8 @@ func NewRouter(d Deps) *gin.Engine {
 	{
 		prj := &handlers.ProjectsHandler{DB: d.DB}
 		api.GET("/projects", prj.List)
-		api.POST("/projects", mw.RequireRoles("manager", "lead"), prj.Create)
+		//	api.POST("/projects", mw.RequireRoles("manager", "lead"), prj.Create)
+		api.POST("/projects", prj.Create)
 
 		def := &handlers.DefectsHandler{DB: d.DB}
 		api.GET("/defects", def.List)
