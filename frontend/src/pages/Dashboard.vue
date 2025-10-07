@@ -81,15 +81,22 @@
         </tbody>
       </table>
     </div>
+    
+    <!-- Компонент скачивания отчёта -->
+    <DownloadReport />
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue'
 import { projectsApi } from '../api'
+import DownloadReport from '../components/DownloadReport.vue'
 
 export default {
   name: 'Dashboard',
+  components: {
+    DownloadReport
+  },
   setup() {
     const projects = ref([])
     const loading = ref(false)

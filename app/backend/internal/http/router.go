@@ -65,6 +65,10 @@ func NewRouter(d Deps) *gin.Engine {
 		api.GET("/refs/statuses", refs.Statuses)
 		api.GET("/refs/roles", refs.Roles)
 
+		// reports
+		rep := &handlers.ReportsHandler{DB: d.DB}
+		api.GET("/reports/summary.csv", rep.SummaryCSV)
+
 		api.GET("/me", func(c *gin.Context) {
 			uid, _ := c.Get("uid")
 			role, _ := c.Get("role")
