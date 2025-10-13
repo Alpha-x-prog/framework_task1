@@ -44,9 +44,9 @@
             <option 
               v-for="role in roles" 
               :key="role.id" 
-              :value="role.id"
+              :value="role.name"
             >
-              {{ role.name }}
+              {{ role.label }}
             </option>
           </select>
         </div>
@@ -92,21 +92,38 @@ export default {
     
     const loadRoles = async () => {
       try {
-        // Не загружаем роли при регистрации, так как это требует авторизации
-        // Вместо этого используем статический список ролей
-        roles.value = [
-          { id: 1, name: 'engineer' },
-          { id: 2, name: 'manager' },
-          { id: 3, name: 'admin' }
-        ]
+        // Загружаем роли из API
+        const apiRoles = await refsApi.getRoles()
+        
+        // Маппинг ролей для отображения
+        const roleLabels = {
+          'manager': 'Руководитель / менеджер проекта',
+          'engineer': 'Инженер-исполнитель',
+          'viewer': 'Заказчик / наблюдатель',
+          'lead': 'Руководитель отдела'
+        }
+        
+        // Преобразуем роли из API с добавлением лейблов
+        roles.value = apiRoles.map(role => ({
+          ...role,
+          label: roleLabels[role.name] || role.name
+        }))
         
         // Устанавливаем роль по умолчанию "engineer"
         const engineerRole = roles.value.find(role => role.name === 'engineer')
         if (engineerRole) {
-          form.value.role = engineerRole.id
+          form.value.role = engineerRole.name
         }
       } catch (err) {
         console.error('Ошибка загрузки ролей:', err)
+        // Fallback к статическому списку в случае ошибки API
+        roles.value = [
+          { id: 1, name: 'engineer', label: 'Инженер-исполнитель' },
+          { id: 2, name: 'manager', label: 'Руководитель / менеджер проекта' },
+          { id: 3, name: 'viewer', label: 'Заказчик / наблюдатель' },
+          { id: 4, name: 'lead', label: 'Руководитель отдела' }
+        ]
+        form.value.role = 'engineer'
       }
     }
     
@@ -122,11 +139,8 @@ export default {
         
         // Добавляем роль только если она выбрана
         if (form.value.role) {
-          // Находим название роли по ID
-          const selectedRole = roles.value.find(role => role.id == form.value.role)
-          if (selectedRole) {
-            registerData.role = selectedRole.name
-          }
+          // form.value.role содержит name роли из API
+          registerData.role = form.value.role
         }
         
         console.log('Отправляем данные регистрации:', registerData)

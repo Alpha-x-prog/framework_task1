@@ -79,11 +79,11 @@
         </button>
       </div>
       
-      <div v-if="loading && defects.length === 0" class="loading">
+      <div v-if="loading && (!defects || defects.length === 0)" class="loading">
         Загрузка дефектов...
       </div>
       
-      <div v-else-if="defects.length === 0" class="loading">
+      <div v-else-if="!defects || defects.length === 0" class="loading">
         Дефекты не найдены
       </div>
       
@@ -125,8 +125,8 @@
       </table>
     </div>
     
-    <!-- Форма создания дефекта -->
-    <div class="form">
+    <!-- Форма создания дефекта (только для инженеров и менеджеров) -->
+    <div v-if="can.createDefect" class="form">
       <h3>Создать дефект</h3>
       <form @submit.prevent="handleCreateDefect">
         <div class="form-row">
@@ -225,6 +225,13 @@
         </button>
       </form>
     </div>
+    
+    <!-- Информация для read-only пользователей -->
+    <div v-else class="info-card">
+      <h3>👁️ Режим просмотра</h3>
+      <p>Ваша роль <strong>{{ role }}</strong> позволяет только просматривать дефекты.</p>
+      <p>Для создания дефектов требуется роль <strong>инженера</strong> или <strong>менеджера</strong>.</p>
+    </div>
   </div>
 </template>
 
@@ -233,6 +240,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { defectsApi, projectsApi, refsApi } from '../api'
 import ProjectSelect from '../components/ProjectSelect.vue'
+import { usePermissions } from '../composables/usePermissions'
 
 export default {
   name: 'Defects',
@@ -242,6 +250,7 @@ export default {
   setup() {
     const route = useRoute()
     const router = useRouter()
+    const { can, role } = usePermissions()
     
     const defects = ref([])
     const projects = ref([])
@@ -422,8 +431,29 @@ export default {
       loadDefects,
       applyFilters,
       clearFilters,
-      handleCreateDefect
+      handleCreateDefect,
+      can,
+      role
     }
   }
 }
+
+.info-card {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.info-card h3 {
+  margin-bottom: 1rem;
+  color: #495057;
+}
+
+.info-card p {
+  margin-bottom: 0.5rem;
+  color: #6c757d;
+}
 </script>
+

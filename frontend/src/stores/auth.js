@@ -7,6 +7,13 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
 
   const isAuthed = computed(() => !!token.value && !!user.value)
+  
+  // Ролевые геттеры
+  const role = computed(() => user.value?.role || '')
+  const isManager = computed(() => user.value?.role === 'manager')
+  const isEngineer = computed(() => user.value?.role === 'engineer')
+  const isLead = computed(() => user.value?.role === 'lead')
+  const isViewer = computed(() => user.value?.role === 'viewer')
 
   const setAuth = (newToken, newUser) => {
     token.value = newToken
@@ -63,6 +70,11 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     user,
     isAuthed,
+    role,
+    isManager,
+    isEngineer,
+    isLead,
+    isViewer,
     register,
     login,
     logout,

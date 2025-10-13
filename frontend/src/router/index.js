@@ -15,6 +15,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/forbidden',
+    name: 'Forbidden',
+    component: () => import('../pages/Forbidden.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/',
     redirect: '/projects'
   },
@@ -22,19 +28,19 @@ const routes = [
     path: '/projects',
     name: 'Projects',
     component: () => import('../pages/Dashboard.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, roles: ['manager', 'engineer', 'lead', 'viewer'] }
   },
   {
     path: '/defects',
     name: 'Defects',
     component: () => import('../pages/Defects.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, roles: ['manager', 'engineer', 'lead', 'viewer'] }
   },
   {
     path: '/defects/:id',
     name: 'DefectDetail',
     component: () => import('../pages/DefectDetail.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, roles: ['manager', 'engineer', 'lead', 'viewer'] }
   }
 ]
 
@@ -54,6 +60,15 @@ router.beforeEach(async (to, from, next) => {
       const isAuthenticated = await authStore.checkAuth()
       if (!isAuthenticated) {
         next('/login')
+        return
+      }
+    }
+    
+    // Check role-based access
+    if (to.meta.roles && to.meta.roles.length > 0) {
+      const userRole = authStore.role
+      if (!to.meta.roles.includes(userRole)) {
+        next('/forbidden')
         return
       }
     }

@@ -2,8 +2,8 @@
   <div class="container">
     <h1>Проекты</h1>
     
-    <!-- Форма добавления проекта -->
-    <div class="form">
+    <!-- Форма добавления проекта (только для менеджера) -->
+    <div v-if="can.createProject" class="form">
       <h3>Добавить проект</h3>
       <form @submit.prevent="handleCreateProject">
         <div class="form-row">
@@ -39,6 +39,13 @@
           {{ loading ? 'Создание...' : 'Создать проект' }}
         </button>
       </form>
+    </div>
+    
+    <!-- Информация о правах доступа -->
+    <div v-else class="info-card">
+      <h3>👁️ Режим просмотра</h3>
+      <p>Ваша роль <strong>{{ role }}</strong> позволяет только просматривать проекты.</p>
+      <p>Для создания проектов требуется роль <strong>менеджера</strong>.</p>
     </div>
     
     <!-- Список проектов -->
@@ -82,8 +89,8 @@
       </table>
     </div>
     
-    <!-- Компонент скачивания отчёта -->
-    <DownloadReport />
+    <!-- Компонент скачивания отчёта (для менеджеров, руководителей и наблюдателей) -->
+    <DownloadReport v-if="can.downloadReport" />
   </div>
 </template>
 
@@ -91,6 +98,7 @@
 import { ref, onMounted } from 'vue'
 import { projectsApi } from '../api'
 import DownloadReport from '../components/DownloadReport.vue'
+import { usePermissions } from '../composables/usePermissions'
 
 export default {
   name: 'Dashboard',
@@ -98,6 +106,7 @@ export default {
     DownloadReport
   },
   setup() {
+    const { can, role } = usePermissions()
     const projects = ref([])
     const loading = ref(false)
     const error = ref('')
@@ -164,8 +173,29 @@ export default {
       error,
       newProject,
       loadProjects,
-      handleCreateProject
+      handleCreateProject,
+      can,
+      role
     }
   }
 }
+
+.info-card {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.info-card h3 {
+  margin-bottom: 1rem;
+  color: #495057;
+}
+
+.info-card p {
+  margin-bottom: 0.5rem;
+  color: #6c757d;
+}
 </script>
+

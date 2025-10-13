@@ -44,8 +44,8 @@
         </div>
       </div>
       
-      <!-- Смена статуса -->
-      <div class="card">
+      <!-- Смена статуса (только для инженеров и менеджеров) -->
+      <div v-if="can.updateDefectStatus" class="card">
         <h3>Сменить статус</h3>
         <form @submit.prevent="handleStatusUpdate">
           <div class="form-row">
@@ -84,8 +84,8 @@
       <div class="card">
         <h3>Комментарии</h3>
         
-        <!-- Форма добавления комментария -->
-        <form @submit.prevent="handleAddComment" style="margin-bottom: 2rem;">
+        <!-- Форма добавления комментария (только для инженеров и менеджеров) -->
+        <form v-if="can.addComment" @submit.prevent="handleAddComment" style="margin-bottom: 2rem;">
           <div class="form-group">
             <label for="comment-body">Добавить комментарий</label>
             <textarea
@@ -131,8 +131,8 @@
       <div class="card">
         <h3>Вложения</h3>
         
-        <!-- Форма загрузки файла -->
-        <form @submit.prevent="handleFileUpload" style="margin-bottom: 2rem;">
+        <!-- Форма загрузки файла (только для инженеров и менеджеров) -->
+        <form v-if="can.uploadAttachment" @submit.prevent="handleFileUpload" style="margin-bottom: 2rem;">
           <div class="form-group">
             <label for="file-upload">Загрузить файл</label>
             <input
@@ -167,8 +167,8 @@
         </div>
       </div>
       
-      <!-- Скачать отчет -->
-      <div class="card">
+      <!-- Скачать отчет (для менеджеров, руководителей и наблюдателей) -->
+      <div v-if="can.downloadReport" class="card">
         <h3>Отчеты</h3>
         <button @click="handleDownloadCsv" class="btn btn-secondary">
           Скачать отчет (CSV)
@@ -182,11 +182,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { defectsApi, projectsApi, refsApi, reportsApi } from '../api'
+import { usePermissions } from '../composables/usePermissions'
 
 export default {
   name: 'DefectDetail',
   setup() {
     const route = useRoute()
+    const { can } = usePermissions()
     
     const defect = ref(null)
     const projects = ref([])
@@ -409,7 +411,8 @@ export default {
       handleAddComment,
       handleFileSelect,
       handleFileUpload,
-      handleDownloadCsv
+      handleDownloadCsv,
+      can
     }
   }
 }
