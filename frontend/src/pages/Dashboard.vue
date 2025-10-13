@@ -80,7 +80,7 @@
             <td>{{ project.name }}</td>
             <td>{{ project.customer || '-' }}</td>
             <td>
-              <router-link :to="`/defects?project_id=${project.id}`" class="btn btn-primary">
+              <router-link :to="`/defects?project_id=${project.id}`" class="btn btn-primary" style="color: black;">
                 Дефекты
               </router-link>
             </td>
@@ -179,7 +179,9 @@ export default {
     }
   }
 }
+</script>
 
+<style scoped>
 .info-card {
   background: #f8f9fa;
   border: 1px solid #dee2e6;
@@ -197,5 +199,5 @@ export default {
   margin-bottom: 0.5rem;
   color: #6c757d;
 }
-</script>
+</style>
 

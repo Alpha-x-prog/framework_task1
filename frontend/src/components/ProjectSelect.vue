@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { projectsApi } from '../api'
 
 export default {
@@ -35,6 +35,11 @@ export default {
   setup(props, { emit }) {
     const projects = ref([])
     const selectedProjectId = ref(props.modelValue)
+    
+    // Следим за изменением modelValue и обновляем selectedProjectId
+    watch(() => props.modelValue, (newValue) => {
+      selectedProjectId.value = newValue
+    })
     
     const loadProjects = async () => {
       try {

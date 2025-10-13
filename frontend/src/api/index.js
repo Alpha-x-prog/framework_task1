@@ -47,6 +47,29 @@ export const refsApi = {
 
 // Reports API
 export const reportsApi = {
+  // JSON-сводка: total, by_status, by_priority, overdue
+  getSummary: (params = {}) => {
+    const queryParams = new URLSearchParams()
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryParams.append(key, params[key])
+      }
+    })
+    return http.get(`/api/reports/summary?${queryParams}`).then(res => res.data)
+  },
+  
+  // Тренды по времени: series с bucket + счётчики по статусам
+  getTrends: (params = {}) => {
+    const queryParams = new URLSearchParams()
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryParams.append(key, params[key])
+      }
+    })
+    return http.get(`/api/reports/trends?${queryParams}`).then(res => res.data)
+  },
+  
+  // CSV-отчёт
   downloadSummaryCsv: async () => {
     const response = await http.get('/api/reports/summary.csv', {
       responseType: 'blob'

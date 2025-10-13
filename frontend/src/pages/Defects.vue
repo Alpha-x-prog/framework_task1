@@ -437,7 +437,9 @@ export default {
     }
   }
 }
+</script>
 
+<style scoped>
 .info-card {
   background: #f8f9fa;
   border: 1px solid #dee2e6;
@@ -455,5 +457,5 @@ export default {
   margin-bottom: 0.5rem;
   color: #6c757d;
 }
-</script>
+</style>
 

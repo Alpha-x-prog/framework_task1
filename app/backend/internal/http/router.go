@@ -86,7 +86,9 @@ func NewRouter(d Deps) *gin.Engine {
 		// ----- ОТЧЁТЫ -----
 		rep := &handlers.ReportsHandler{DB: d.DB}
 		// Формирование/скачивание отчёта: менеджер/руководитель
-		// (просмотр отчётности для руководителей и “заказчиков” → роль viewer тоже допускаем)
+		// (просмотр отчётности для руководителей и "заказчиков" → роль viewer тоже допускаем)
+		api.GET("/reports/summary", mw.RequireRoles("manager", "lead", "viewer"), rep.SummaryJSON)
+		api.GET("/reports/trends", mw.RequireRoles("manager", "lead", "viewer"), rep.TrendsJSON)
 		api.GET("/reports/summary.csv", mw.RequireRoles("manager", "lead", "viewer"), rep.SummaryCSV)
 	}
 

@@ -41,6 +41,12 @@ const routes = [
     name: 'DefectDetail',
     component: () => import('../pages/DefectDetail.vue'),
     meta: { requiresAuth: true, roles: ['manager', 'engineer', 'lead', 'viewer'] }
+  },
+  {
+    path: '/reports',
+    name: 'Reports',
+    component: () => import('../pages/Reports.vue'),
+    meta: { requiresAuth: true, roles: ['manager', 'lead', 'viewer'] }
   }
 ]
 
