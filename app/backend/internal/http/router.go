@@ -62,6 +62,10 @@ func NewRouter(d Deps) *gin.Engine {
 		api.POST("/projects", mw.RequireRoles("manager", "lead"), prj.Create)
 		// Если хочешь разрешить менеджеру назначать задачи отдельным эндпоинтом — добавишь здесь.
 
+		usr := &handlers.UsersHandler{DB: d.DB}
+		// Обычно: manager, lead (по заданию “назначение задач, контроль сроков”)
+		api.GET("/users", mw.RequireRoles("manager", "lead", "engineer"), usr.List)
+
 		// ----- ДЕФЕКТЫ -----
 		def := &handlers.DefectsHandler{DB: d.DB}
 		// Просмотр дефектов: всем ролям
