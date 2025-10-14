@@ -30,6 +30,17 @@
               <option value="5">5 - Очень низкий</option>
             </select>
           </div>
+
+          <div class="form-group">
+            <label>Инженер</label>
+            <select v-model="filters.assignee_id" class="form-control">
+              <option value="">Все</option>
+              <option v-for="u in assignees" :key="u.id" :value="u.id">
+                {{ loginFromEmail(u.email) }}
+              </option>
+              <option v-if="assignees.length === 0" disabled>Нет инженеров</option>
+            </select>
+          </div>
           
           <div class="form-group">
             <label for="search">Поиск</label>
@@ -96,6 +107,7 @@
             <th>Статус</th>
             <th>Приоритет</th>
             <th>Срок</th>
+            <th>Исполнитель</th>
             <th>Обновлен</th>
           </tr>
         </thead>
@@ -119,6 +131,12 @@
               </span>
             </td>
             <td>{{ defect.due_date ? formatDate(defect.due_date) : '-' }}</td>
+            <td>
+              {{ (() => {
+                const u = assignees.find(a => a.id === defect.assignee_id)
+                return u ? loginFromEmail(u.email) : '—'
+              })() }}
+            </td>
             <td>{{ formatDate(defect.updated_at) }}</td>
           </tr>
         </tbody>
@@ -215,6 +233,17 @@
             />
           </div>
         </div>
+
+        <div class="form-group" v-if="['manager','engineer'].includes(role)">
+          <label>Исполнитель</label>
+          <select v-model="newDefect.assignee_id" class="form-control">
+            <option value="">Не назначен</option>
+            <option v-for="u in assignees" :key="u.id" :value="u.id">
+              {{ loginFromEmail(u.email) }}
+            </option>
+            <option v-if="assignees.length === 0" disabled>Нет инженеров</option>
+          </select>
+        </div>
         
         <button 
           type="submit" 
@@ -238,9 +267,10 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { defectsApi, projectsApi, refsApi } from '../api'
+import { defectsApi, projectsApi, refsApi, getUsers } from '../api'
 import ProjectSelect from '../components/ProjectSelect.vue'
 import { usePermissions } from '../composables/usePermissions'
+import { loginFromEmail } from '../utils/login'
 
 export default {
   name: 'Defects',
@@ -255,6 +285,7 @@ export default {
     const defects = ref([])
     const projects = ref([])
     const statuses = ref([])
+    const assignees = ref([])
     const loading = ref(false)
     const error = ref('')
     
@@ -323,6 +354,15 @@ export default {
         console.error('Ошибка загрузки дефектов:', err)
       } finally {
         loading.value = false
+      }
+    }
+
+    const loadAssignees = async () => {
+      try {
+        const { data } = await getUsers({ role: 'engineer', limit: 500 })
+        assignees.value = data || []
+      } catch (e) {
+        assignees.value = []
       }
     }
     
@@ -412,6 +452,7 @@ export default {
       await Promise.all([
         loadProjects(),
         loadStatuses(),
+        loadAssignees(),
         loadDefects()
       ])
     })
@@ -432,6 +473,8 @@ export default {
       applyFilters,
       clearFilters,
       handleCreateDefect,
+      loginFromEmail,
+      assignees,
       can,
       role
     }

@@ -86,3 +86,11 @@ export const reportsApi = {
     window.URL.revokeObjectURL(url)
   }
 }
+
+// Lightweight helpers (flat exports) requested by UI pieces
+// Users list with optional params, e.g. role=engineer
+export const getUsers = (params = {}) => http.get('/api/users', { params })
+
+// Defects helpers mirroring above but returning raw axios response
+export const getDefects = (params = {}) => http.get('/api/defects', { params })
+export const createDefect = (payload) => http.post('/api/defects', payload)
