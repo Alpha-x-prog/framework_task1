@@ -86,6 +86,10 @@ func NewRouter(d Deps) *gin.Engine {
 		att := &handlers.AttachmentsHandler{DB: d.DB}
 		// Загрузка файлов: инженер/менеджер
 		api.POST("/defects/:id/attachments", mw.RequireRoles("engineer", "manager"), att.Upload)
+		// Список вложений дефекта: всем ролям
+		api.GET("/defects/:id/attachments", att.List)
+		// Скачивание вложения по id: всем ролям
+		api.GET("/attachments/:attId/download", att.Download)
 
 		// ----- ОТЧЁТЫ -----
 		rep := &handlers.ReportsHandler{DB: d.DB}

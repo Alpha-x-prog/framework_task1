@@ -36,6 +36,8 @@ export const defectsApi = {
       }
     }).then(res => res.data)
   },
+  listAttachments: (defectId) => http.get(`/api/defects/${defectId}/attachments`).then(res => res.data),
+  downloadAttachment: (attId) => http.get(`/api/attachments/${attId}/download`, { responseType: 'blob' }),
   updateStatus: (defectId, statusId) => http.patch(`/api/defects/${defectId}/status`, { status_id: statusId })
 }
 

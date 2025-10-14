@@ -111,3 +111,39 @@ func (h *AttachmentsHandler) Upload(c *gin.Context) {
 		"mime":      mime,
 	})
 }
+
+// List attachments for a defect
+func (h *AttachmentsHandler) List(c *gin.Context) {
+	defectID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || defectID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad id"})
+		return
+	}
+	items, err := repo.ListAttachmentsByDefect(c.Request.Context(), h.DB, defectID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, items)
+}
+
+// Download serves a file by attachment id (simple local file serving)
+func (h *AttachmentsHandler) Download(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("attId"), 10, 64)
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad id"})
+		return
+	}
+	a, err := repo.GetAttachmentByID(c.Request.Context(), h.DB, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	// Best-effort content type
+	ct := "application/octet-stream"
+	if a.Mime != nil && *a.Mime != "" {
+		ct = *a.Mime
+	}
+	c.Header("Content-Type", ct)
+	c.File(a.FilePath)
+}

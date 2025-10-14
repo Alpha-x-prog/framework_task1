@@ -405,7 +405,7 @@ export default {
       
       try {
         const defectData = {
-          project_id: newDefect.value.project_id,
+          project_id: parseInt(newDefect.value.project_id),
           title: newDefect.value.title
         }
         
@@ -416,7 +416,7 @@ export default {
           defectData.priority = parseInt(newDefect.value.priority)
         }
         if (newDefect.value.status_id) {
-          defectData.status_id = newDefect.value.status_id
+          defectData.status_id = parseInt(newDefect.value.status_id)
         }
         if (newDefect.value.due_date) {
           defectData.due_date = newDefect.value.due_date

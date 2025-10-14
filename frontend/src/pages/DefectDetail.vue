@@ -119,7 +119,7 @@
         <div v-else>
           <div v-for="comment in comments" :key="comment.id" class="comment">
             <div class="comment-header">
-              <span>Автор ID: {{ comment.author_id }}</span>
+              <span>Автор: {{ commentLogin(comment) }}</span>
               <span>{{ formatDate(comment.created_at) }}</span>
             </div>
             <div class="comment-body">{{ comment.body }}</div>
@@ -157,14 +157,18 @@
           {{ fileMessage.text }}
         </div>
         
-        <div v-if="attachments.length > 0">
-          <h4>Загруженные файлы:</h4>
-          <ul>
-            <li v-for="attachment in attachments" :key="attachment.id">
-              {{ attachment.file_path }}
-            </li>
-          </ul>
+        <div v-if="attachments.length > 0" class="attachments-grid">
+          <div v-for="a in attachments" :key="a.id" class="attachment-item">
+            <div class="attachment-meta">
+              <div class="attachment-name" :title="a.file_path">{{ shortFileName(a.file_path) }}</div>
+              <div class="attachment-sub">ID: {{ a.id }} · {{ a.mime || 'file' }} · {{ formatDate(a.created_at) }}</div>
+            </div>
+            <div class="attachment-actions">
+              <button class="btn btn-secondary" @click="download(a)">Скачать</button>
+            </div>
+          </div>
         </div>
+        <div v-else class="loading">Файлов пока нет</div>
       </div>
       
       <!-- Скачать отчет (для менеджеров, руководителей и наблюдателей) -->
@@ -182,6 +186,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { defectsApi, projectsApi, refsApi, reportsApi } from '../api'
+import { loginFromEmail } from '../utils/login'
 import { usePermissions } from '../composables/usePermissions'
 
 export default {
@@ -198,6 +203,7 @@ export default {
     
     const loading = ref(false)
     const commentsLoading = ref(false)
+    const commentLoading = ref(false)
     const statusLoading = ref(false)
     const fileLoading = ref(false)
     
@@ -285,6 +291,15 @@ export default {
         console.error('Ошибка загрузки комментариев:', err)
       } finally {
         commentsLoading.value = false
+      }
+    }
+
+    const loadAttachments = async () => {
+      if (!defect.value) return
+      try {
+        attachments.value = await defectsApi.listAttachments(defect.value.id)
+      } catch (err) {
+        console.error('Ошибка загрузки вложений:', err)
       }
     }
     
@@ -383,7 +398,10 @@ export default {
       ])
       
       if (defect.value) {
-        await loadComments()
+        await Promise.all([
+          loadComments(),
+          loadAttachments()
+        ])
       }
     })
     
@@ -395,6 +413,7 @@ export default {
       attachments,
       loading,
       commentsLoading,
+      commentLoading,
       statusLoading,
       fileLoading,
       statusUpdate,
@@ -407,11 +426,36 @@ export default {
       getStatusName,
       getStatusClass,
       formatDate,
+      commentLogin: (c) => c.author_email ? loginFromEmail(c.author_email) : `ID: ${c.author_id}`,
       handleStatusUpdate,
       handleAddComment,
       handleFileSelect,
       handleFileUpload,
       handleDownloadCsv,
+      loadAttachments,
+      shortFileName: (p) => {
+        if (!p) return ''
+        const idx = p.lastIndexOf('/')
+        const idx2 = p.lastIndexOf('\\')
+        const cut = Math.max(idx, idx2)
+        return cut >= 0 ? p.slice(cut + 1) : p
+      },
+      download: async (a) => {
+        try {
+          const resp = await defectsApi.downloadAttachment(a.id)
+          const blob = new Blob([resp.data], { type: a.mime || 'application/octet-stream' })
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = (a.file_path && (a.file_path.split('/').pop() || a.file_path.split('\\').pop())) || `attachment-${a.id}`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+        } catch (err) {
+          alert(err.response?.data?.message || 'Ошибка скачивания файла')
+        }
+      },
       can
     }
   }
