@@ -11,7 +11,10 @@
         </nav>
         
         <div class="user-info">
-          <span>{{ user?.email }}</span>
+          <button class="btn btn-secondary" @click="toggleTheme" :aria-label="`Toggle theme`">
+            {{ theme === 'dark' ? '🌙' : '☀️' }}
+          </button>
+          <span class="user-email" v-if="user?.email">{{ user.email }}</span>
           <button @click="handleLogout" class="btn btn-secondary">Выйти</button>
         </div>
       </div>
@@ -20,7 +23,7 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 import { usePermissions } from '../composables/usePermissions'
@@ -33,6 +36,32 @@ export default {
     const { can } = usePermissions()
     
     const user = computed(() => authStore.user)
+    const theme = ref('light')
+
+    const applyTheme = (t) => {
+      const el = document.documentElement
+      if (t === 'dark') {
+        el.setAttribute('data-theme', 'dark')
+      } else {
+        el.removeAttribute('data-theme')
+      }
+    }
+
+    const toggleTheme = () => {
+      theme.value = theme.value === 'dark' ? 'light' : 'dark'
+      localStorage.setItem('theme', theme.value)
+      applyTheme(theme.value)
+    }
+
+    onMounted(() => {
+      const saved = localStorage.getItem('theme')
+      if (saved === 'dark' || saved === 'light') {
+        theme.value = saved
+      } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        theme.value = 'dark'
+      }
+      applyTheme(theme.value)
+    })
     
     const handleLogout = () => {
       authStore.logout()
@@ -42,7 +71,9 @@ export default {
     return {
       user,
       handleLogout,
-      can
+      can,
+      theme,
+      toggleTheme
     }
   }
 }
@@ -62,7 +93,7 @@ export default {
 }
 
 .nav-link {
-  color: #495057;
+  color: var(--color-text);
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -70,11 +101,11 @@ export default {
 }
 
 .nav-link:hover {
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-alt);
 }
 
 .nav-link.router-link-active {
-  background-color: #007bff;
+  background-color: var(--color-primary);
   color: white;
 }
 
@@ -82,5 +113,9 @@ export default {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.user-email {
+  opacity: 0.85;
 }
 </style>

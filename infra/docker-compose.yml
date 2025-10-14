@@ -1,21 +1,55 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:16
+    restart: unless-stopped
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
       POSTGRES_DB: defects
-    ports: ["5432:5432"]
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ../sql/init.sql:/docker-entrypoint-initdb.d/00_init.sql:ro
-      - ../sql/seed.sql:/docker-entrypoint-initdb.d/01_seed.sql:ro
+      - ../app/sql/init.sql:/docker-entrypoint-initdb.d/00_init.sql:ro
+      - ../app/sql/seed.sql:/docker-entrypoint-initdb.d/01_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d defects"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   api:
     build: ../app/backend
-    env_file: ../.env
-    depends_on: [db]
-    ports: ["8080:8080"]
+    restart: unless-stopped
+    environment:
+      API_ADDR: ":8080"
+      DB_URL: "postgres://app:app@db:5432/defects?sslmode=disable"
+      JWT_SECRET: "change_me_in_prod"
+      CORS_ORIGINS: "http://localhost:5173"
+      UPLOAD_DIR: "/app/uploads/attachments"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../app/backend/uploads:/app/uploads
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE: "http://localhost:8080"
+    volumes:
+      - ../frontend:/app
+    command: sh -c "npm ci && npm run dev -- --host"
+    depends_on:
+      - api
+    ports:
+      - "5173:5173"
 
 volumes:
   pgdata: {}

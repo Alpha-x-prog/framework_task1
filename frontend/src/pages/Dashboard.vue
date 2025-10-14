@@ -80,7 +80,7 @@
             <td>{{ project.name }}</td>
             <td>{{ project.customer || '-' }}</td>
             <td>
-              <router-link :to="`/defects?project_id=${project.id}`" class="btn btn-primary" style="color: black;">
+              <router-link :to="`/defects?project_id=${project.id}`" class="btn btn-primary">
                 Дефекты
               </router-link>
             </td>
@@ -183,21 +183,22 @@ export default {
 
 <style scoped>
 .info-card {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .info-card h3 {
   margin-bottom: 1rem;
-  color: #495057;
+  color: var(--color-text);
 }
 
 .info-card p {
   margin-bottom: 0.5rem;
-  color: #6c757d;
+  color: var(--color-secondary);
 }
 </style>
 
