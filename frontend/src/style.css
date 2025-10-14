@@ -191,12 +191,12 @@ body {
   background: var(--color-surface-alt);
 }
 
-.table a {
+.table a:not(.btn) {
   color: var(--color-primary);
   text-decoration: none;
 }
 
-.table a:hover {
+.table a:not(.btn):hover {
   text-decoration: underline;
 }
 

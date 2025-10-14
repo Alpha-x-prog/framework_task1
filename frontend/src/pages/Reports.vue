@@ -56,30 +56,27 @@
     </div>
 
     <!-- Графики -->
-    <div class="charts-grid">
-      <!-- 1) Pie по статусам -->
-      <div class="chart-container" v-if="summary && summary.by_status">
-        <h3>Распределение по статусам</h3>
-        <div class="chart-wrapper">
-          <PieChart :chart-data="statusChartData" :chart-options="chartOptions" />
-        </div>
+    <div class="charts">
+      <div class="chart-card" v-if="(summary?.by_status?.length || 0) > 0">
+        <PieChart :chart-data="statusChartData" :chart-options="pieOpts" />
+      </div>
+      <div class="chart-card" v-else>
+        <div class="empty">Нет данных по статусам</div>
       </div>
 
-      <!-- 2) Bar по приоритетам -->
-      <div class="chart-container" v-if="summary && summary.by_priority">
-        <h3>Распределение по приоритетам</h3>
-        <div class="chart-wrapper">
-          <BarChart :chart-data="priorityChartData" :chart-options="chartOptions" />
-        </div>
+      <div class="chart-card" v-if="(summary?.by_priority?.length || 0) > 0">
+        <BarChart :chart-data="priorityChartData" :chart-options="barOpts" />
       </div>
+      <div class="chart-card" v-else>
+        <div class="empty">Нет данных по приоритетам</div>
+      </div>
+    </div>
 
-      <!-- 3) Line динамика -->
-      <div class="chart-container" v-if="trends.length">
-        <h3>Динамика создания дефектов</h3>
-        <div class="chart-wrapper">
-          <LineChart :chart-data="trendsChartData" :chart-options="chartOptions" />
-        </div>
-      </div>
+    <div class="chart-card" v-if="trends.length > 0">
+      <LineChart :chart-data="trendsChartData" :chart-options="lineOpts" />
+    </div>
+    <div class="chart-card" v-else>
+      <div class="empty">Нет данных по динамике</div>
     </div>
 
     <!-- Сообщение об ошибке -->
@@ -113,13 +110,32 @@ const summary = ref(null)
 const trends = ref([])
 const projects = ref([])
 
-const chartOptions = {
+const commonOpts = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: {
-      position: 'top',
-    },
+    legend: { position: 'top', labels: { boxWidth: 12 } },
+    tooltip: { mode: 'index', intersect: false },
+  },
+  layout: { padding: 8 },
+}
+
+const pieOpts = { ...commonOpts, cutout: '55%' }
+
+const barOpts = {
+  ...commonOpts,
+  scales: {
+    x: { ticks: { autoSkip: true, maxRotation: 0 } },
+    y: { beginAtZero: true, ticks: { precision: 0, stepSize: 1 } },
+  },
+}
+
+const lineOpts = {
+  ...commonOpts,
+  interaction: { mode: 'index', intersect: false },
+  scales: {
+    x: { grid: { display: false } },
+    y: { beginAtZero: true, ticks: { precision: 0 } },
   },
 }
 
@@ -147,7 +163,7 @@ const priorityChartData = computed(() => {
   if (!summary.value?.by_priority) return { labels: [], datasets: [] }
   
   return {
-    labels: summary.value.by_priority.map(p => `Приоритет ${p.priority}`),
+    labels: summary.value.by_priority.map(p => String(p.priority)),
     datasets: [{
       label: 'Количество дефектов',
       data: summary.value.by_priority.map(p => p.count),
@@ -296,10 +312,11 @@ onMounted(async () => {
   gap: 16px;
   align-items: end;
   flex-wrap: wrap;
-  background: #f8f9fa;
+  background: var(--color-surface);
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .filters .form-group {
@@ -320,13 +337,13 @@ onMounted(async () => {
 }
 
 .kpi-card {
-  background: white;
-  border: 1px solid #dee2e6;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 1.5rem;
   text-align: center;
   flex: 1;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .kpi-card.overdue {
@@ -335,7 +352,7 @@ onMounted(async () => {
 
 .kpi-card h3 {
   margin: 0 0 0.5rem 0;
-  color: #6c757d;
+  color: var(--color-secondary);
   font-size: 0.9rem;
   font-weight: 500;
 }
@@ -343,37 +360,39 @@ onMounted(async () => {
 .kpi-value {
   font-size: 2rem;
   font-weight: bold;
-  color: #495057;
+  color: var(--color-text);
 }
 
 .kpi-card.overdue .kpi-value {
   color: #dc3545;
 }
 
-.charts-grid {
+.charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
-.chart-container {
-  background: white;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.chart-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 12px;
+  height: 360px;
+  display: flex;
+  align-items: stretch;
+  box-shadow: var(--shadow-sm);
 }
 
-.chart-container h3 {
-  margin: 0 0 1rem 0;
-  color: #495057;
-  font-size: 1.1rem;
+.chart-card canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
-.chart-wrapper {
-  height: 300px;
-  position: relative;
+.empty {
+  margin: auto;
+  color: var(--color-secondary);
 }
 
 @media (max-width: 768px) {
@@ -386,8 +405,7 @@ onMounted(async () => {
     flex-direction: column;
   }
   
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
+  .charts { grid-template-columns: 1fr; }
+  .chart-card { height: 320px; }
 }
 </style>
