@@ -44,37 +44,31 @@
         </div>
       </div>
       
-      <!-- Смена статуса (только для инженеров и менеджеров) -->
+      <!-- Продвижение статуса (только для инженеров и менеджеров) -->
       <div v-if="can.updateDefectStatus" class="card">
         <h3>Сменить статус</h3>
-        <form @submit.prevent="handleStatusUpdate">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="status-select">Новый статус</label>
-              <select
-                id="status-select"
-                v-model="statusUpdate.status_id"
-                class="form-control"
-                :disabled="statusLoading"
-              >
-                <option value="">Выберите статус</option>
-                <option v-for="status in statuses" :key="status.id" :value="status.id">
-                  {{ status.name }}
-                </option>
-              </select>
+        <div class="form-row">
+          <div class="form-group" style="display: flex; align-items: center; gap: 12px;">
+            <div>
+              <label>Текущий статус</label>
+              <div>
+                <span :class="`status status-${getStatusClass(defect.status_id)}`">
+                  {{ getStatusName(defect.status_id) }}
+                </span>
+              </div>
             </div>
-            <div class="form-group" style="display: flex; align-items: end;">
-              <button 
-                type="submit" 
-                class="btn btn-primary"
-                :disabled="statusLoading || !statusUpdate.status_id"
-              >
-                {{ statusLoading ? 'Обновление...' : 'Обновить статус' }}
-              </button>
-            </div>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              :disabled="statusLoading || !nextStatusId"
+              @click="handleAdvance"
+              title="Перевести на следующий этап"
+            >
+              {{ nextStatusLabel }}
+            </button>
           </div>
-        </form>
-        
+        </div>
+
         <div v-if="statusMessage" :class="`alert ${statusMessage.type}`">
           {{ statusMessage.text }}
         </div>
@@ -207,9 +201,7 @@ export default {
     const statusLoading = ref(false)
     const fileLoading = ref(false)
     
-    const statusUpdate = ref({
-      status_id: ''
-    })
+    // ручной выбор статуса убран
     
     const newComment = ref({
       body: ''
@@ -234,12 +226,12 @@ export default {
     const getStatusClass = (statusId) => {
       const status = statuses.value.find(s => s.id === statusId)
       if (!status) return 'unknown'
-      
       const name = status.name.toLowerCase()
-      if (name.includes('new')) return 'new'
-      if (name.includes('progress')) return 'in-progress'
-      if (name.includes('resolved')) return 'resolved'
-      if (name.includes('closed')) return 'closed'
+      if (name === 'new' || name.includes('new')) return 'new'
+      if (name === 'in_work' || name.includes('in_work') || name.includes('work') || name.includes('progress')) return 'in-progress'
+      if (name === 'review' || name.includes('review')) return 'review'
+      if (name === 'closed' || name.includes('closed')) return 'closed'
+      if (name === 'canceled' || name.includes('cancel')) return 'canceled'
       return 'unknown'
     }
     
@@ -247,6 +239,31 @@ export default {
       if (!dateString) return '-'
       return new Date(dateString).toLocaleString('ru-RU')
     }
+
+    // Порядок продвижения статусов
+    const statusOrder = ['new', 'in_work', 'review', 'closed']
+
+    const currentStatusName = computed(() => {
+      if (!defect.value) return ''
+      const s = statuses.value.find(x => x.id === defect.value.status_id)
+      return s ? s.name : ''
+    })
+
+    const nextStatusId = computed(() => {
+      const curName = currentStatusName.value
+      if (!curName) return null
+      const idx = statusOrder.indexOf(curName)
+      if (idx === -1 || idx >= statusOrder.length - 1) return null
+      const nextName = statusOrder[idx + 1]
+      const next = statuses.value.find(x => x.name === nextName)
+      return next ? next.id : null
+    })
+
+    const nextStatusLabel = computed(() => {
+      if (!nextStatusId.value) return 'Дальше'
+      const s = statuses.value.find(x => x.id === nextStatusId.value)
+      return s ? `Дальше → ${s.name}` : 'Дальше'
+    })
     
     const loadDefect = async () => {
       loading.value = true
@@ -303,28 +320,24 @@ export default {
       }
     }
     
-    const handleStatusUpdate = async () => {
-      if (!defect.value || !statusUpdate.value.status_id) return
-      
+    // ручное обновление статуса удалено
+
+    const handleAdvance = async () => {
+      if (!defect.value || !nextStatusId.value) return
       statusLoading.value = true
       statusMessage.value = null
-      
       try {
-        await defectsApi.updateStatus(defect.value.id, statusUpdate.value.status_id)
-        
-        // Обновляем статус в локальном объекте
-        defect.value.status_id = statusUpdate.value.status_id
-        
-        statusMessage.value = {
-          type: 'alert-success',
-          text: 'Статус успешно обновлен'
-        }
-        
-        statusUpdate.value.status_id = ''
+        await defectsApi.updateStatus(defect.value.id, nextStatusId.value)
+        // Обновляем локально для мгновенного UI
+        defect.value.status_id = nextStatusId.value
+        statusMessage.value = { type: 'alert-success', text: 'Статус продвинут' }
+        // Перезагружаем страницу, чтобы гарантированно синхронизировать всё состояние
+        // (это также устранит временные ошибки рендера)
+        window.location.reload()
       } catch (err) {
         statusMessage.value = {
           type: 'alert-error',
-          text: err.response?.data?.message || 'Ошибка обновления статуса'
+          text: err.response?.data?.message || 'Не удалось обновить статус'
         }
       } finally {
         statusLoading.value = false
@@ -416,18 +429,20 @@ export default {
       commentLoading,
       statusLoading,
       fileLoading,
-      statusUpdate,
       newComment,
       selectedFile,
       fileInput,
       statusMessage,
       fileMessage,
+      nextStatusId,
+      nextStatusLabel,
       getProjectName,
       getStatusName,
       getStatusClass,
       formatDate,
       commentLogin: (c) => c.author_email ? loginFromEmail(c.author_email) : `ID: ${c.author_id}`,
-      handleStatusUpdate,
+      // handleStatusUpdate removed
+      handleAdvance,
       handleAddComment,
       handleFileSelect,
       handleFileUpload,

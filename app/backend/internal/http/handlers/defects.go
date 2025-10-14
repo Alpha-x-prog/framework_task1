@@ -47,6 +47,7 @@ func asDatePtr(s string) *time.Time {
 
 func (h *DefectsHandler) List(c *gin.Context) {
 	f := repo.DefectFilter{
+		ID:         asInt64Ptr(c.Query("id")),
 		ProjectID:  asInt64Ptr(c.Query("project_id")),
 		StatusID:   asIntPtr(c.Query("status_id")),
 		AssigneeID: asInt64Ptr(c.Query("assignee_id")),

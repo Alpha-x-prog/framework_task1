@@ -24,6 +24,7 @@ type Defect struct {
 }
 
 type DefectFilter struct {
+	ID         *int64
 	ProjectID  *int64
 	StatusID   *int
 	AssigneeID *int64
@@ -39,6 +40,9 @@ func ListDefects(ctx context.Context, db *pgxpool.Pool, f DefectFilter) ([]Defec
 	i := 1
 	add := func(cond string, v any) { where = append(where, fmt.Sprintf(cond, i)); args = append(args, v); i++ }
 
+	if f.ID != nil {
+		add("id=$%d", *f.ID)
+	}
 	if f.ProjectID != nil {
 		add("project_id=$%d", *f.ProjectID)
 	}
